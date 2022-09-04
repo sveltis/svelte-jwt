@@ -11,8 +11,12 @@
   }
 
   const onReadClick = async (): Promise<void> => {
-    const response = await fetch('/api/me', {method: 'POST',
-      body: JSON.stringify({ token: $token})}  );
+    const response = await fetch('/api/me', { 
+        method: 'GET',
+        headers: {
+          Authorization: `Bearer ${$token}`
+        }
+      });
       $payload = await response.json();
   }
 </script>

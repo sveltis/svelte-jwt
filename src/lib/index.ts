@@ -3,17 +3,25 @@ import * as jose from 'jose';
 
 const key = await jose.generateSecret('HS256');
 
-export type SvelteJWT = {
-	parse(jwt: string): Promise<App.JWTPayload>;
-	generate(payload: App.JWTPayload): Promise<string>;
-};
-
 type SvelteJWTConfig = {
 	issuer: string;
 	audience: string;
+	jwt: string;
 };
 
-class SvelteJWTHelper implements SvelteJWT {
+type JWTGenerate = (payload: App.JWTPayload) => Promise<string>;
+
+export interface ISvelteJWTHelper {
+	parse(jwt: string): Promise<App.JWTPayload>;
+	generate: JWTGenerate;
+}
+
+export type SvelteJWT = {
+	payload: App.JWTPayload | undefined;
+	generate: JWTGenerate;
+};
+
+class SvelteJWTHelper implements ISvelteJWTHelper {
 	public constructor(private _issuer: string, private _audience: string) {}
 
 	public parse = async (jwt: string): Promise<App.JWTPayload> => {
@@ -39,7 +47,17 @@ class SvelteJWTHelper implements SvelteJWT {
 
 export const handleJWT =
 	(config: SvelteJWTConfig): Handle =>
-	({ event, resolve }) => {
-		event.locals.jwt = new SvelteJWTHelper(config.issuer, config.audience);
+	async ({ event, resolve }) => {
+		const auth = event.request.headers.get('Authorization');
+		const { generate, parse } = new SvelteJWTHelper(config.issuer, config.audience);
+		let payload;
+		if (auth && auth.includes('Bearer')) {
+			const [, jwt] = auth.split(' ');
+			payload = await parse(jwt);
+		}
+		event.locals.jwt = {
+			generate,
+			payload
+		};
 		return resolve(event);
 	};
