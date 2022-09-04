@@ -4,8 +4,8 @@ import * as jose from 'jose';
 const key = await jose.generateSecret('HS256');
 
 export type SvelteJWT = {
-	decode(token: string): Promise<App.JWTPayload>;
-	encode(payload: App.JWTPayload): Promise<string>;
+	parse(jwt: string): Promise<App.JWTPayload>;
+	generate(payload: App.JWTPayload): Promise<string>;
 };
 
 type SvelteJWTConfig = {
@@ -16,8 +16,8 @@ type SvelteJWTConfig = {
 class SvelteJWTHelper implements SvelteJWT {
 	public constructor(private _issuer: string, private _audience: string) {}
 
-	public decode = async (token: string): Promise<App.JWTPayload> => {
-		const { payload } = await jose.jwtDecrypt(token, key, {
+	public parse = async (jwt: string): Promise<App.JWTPayload> => {
+		const { payload } = await jose.jwtDecrypt(jwt, key, {
 			issuer: this._issuer,
 			audience: this._audience
 		});
@@ -25,7 +25,7 @@ class SvelteJWTHelper implements SvelteJWT {
 		return payload as unknown as App.JWTPayload;
 	};
 
-	public encode = async (payload: App.JWTPayload): Promise<string> => {
+	public generate = async (payload: App.JWTPayload): Promise<string> => {
 		const jwt = await new jose.EncryptJWT({ ...payload } as jose.JWTPayload)
 			.setProtectedHeader({ alg: 'dir', enc: 'A256GCM' })
 			.setIssuedAt()
