@@ -10,7 +10,7 @@
     $token = data?.token;
   }
 
-  const onReadClick = async (): Promise<void> => {
+      const    onReadClick = async (): Promise<void> => {
     const response = await fetch('/api/me', { 
         method: 'GET',
         headers: {
