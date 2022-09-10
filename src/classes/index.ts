@@ -39,7 +39,6 @@ export class SvelteJWTHelper<T> implements ISvelteJWTHelper<T> {
 	};
 
 	public parse = async (): Promise<T> => {
-		console.log('bearer', this._bearer);
 		if (!this._bearer) return this._payloadDefault;
 		const { payload } = await jose.jwtDecrypt(this._bearer, this._key, {
 			issuer: this._issuer,
