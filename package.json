@@ -1,10 +1,13 @@
 {
 	"name": "@sveltis/jwt",
-	"version": "0.0.6",
+	"version": "0.0.7",
 	"author": {
 		"email": "zheleznov@outlook.de",
 		"name": "Sergei Zheleznov"
 	},
+	"license": "MIT",
+	"bugs": "https://github.com/sveltis/svelte-jwt/issues",
+	"repository": "github:sveltis/svelte-jwt",
 	"scripts": {
 		"dev": "vite dev",
 		"test": "vitest",
