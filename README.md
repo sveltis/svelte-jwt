@@ -1,38 +1,62 @@
-# create-svelte
+# Quick start
 
-Everything you need to build a Svelte project, powered by [`create-svelte`](https://github.com/sveltejs/kit/tree/master/packages/create-svelte).
+## Extend App.Locals and add JwtPayload interface in `app.d.ts`
 
-## Creating a project
+```ts
+declare namespace App {
+	// ...
+	interface Locals {
+		jwt: import('@sveltis/jwt').SvelteJWT<JwtPayload>;
+	}
 
-If you're seeing this, you've probably already done this step. Congrats!
-
-```bash
-# create a new project in the current directory
-npm create svelte@latest
-
-# create a new project in my-app
-npm create svelte@latest my-app
+	interface JwtPayload {
+		login: string;
+		role: 'user' | 'guest' | 'admin';
+	}
+	// ...
+}
 ```
 
-## Developing
+## Update `hooks.server.ts`
 
-Once you've created a project and installed dependencies with `npm install` (or `pnpm install` or `yarn`), start a development server:
+```ts
+import { handleJWT } from '$lib';
+import { sequence } from '@sveltejs/kit/hooks';
 
-```bash
-npm run dev
-
-# or start the server and open the app in a new browser tab
-npm run dev -- --open
+export const handle = sequence(
+	handleJWT<App.JwtPayload>({
+		issuer: 'issuer',
+		audience: 'aud',
+		payloadDefault: {
+			role: 'guest',
+			login: ''
+		}
+	})
+);
 ```
 
-## Building
+## Generating token in endpoint
 
-To create a production version of your app:
+```ts
+import type { RequestHandler } from '@sveltejs/kit';
 
-```bash
-npm run build
+export const POST: RequestHandler = async ({ locals }) => {
+	const { jwt } = locals;
+	const token = await jwt.generate({
+		role: 'user',
+		login: 'max'
+	});
+	return new Response(JSON.stringify({ token }));
+};
 ```
 
-You can preview the production build with `npm run preview`.
+## Reading JWT payload in endpoint
 
-> To deploy your app, you may need to install an [adapter](https://kit.svelte.dev/docs/adapters) for your target environment.
+```ts
+import type { RequestHandler } from '@sveltejs/kit';
+
+export const GET: RequestHandler = async ({ locals }) => {
+	const { jwt } = locals;
+	return new Response(JSON.stringify(jwt.payload));
+};
+```
