@@ -2,7 +2,7 @@
 	import { writable } from 'svelte/store';
 
 	const token = writable('');
-	const payload = writable<App.JWTPayload | undefined>();
+	const payload = writable();
 
 	const onSendClick = async (): Promise<void> => {
 		const response = await fetch('/api/login', { method: 'POST' });
