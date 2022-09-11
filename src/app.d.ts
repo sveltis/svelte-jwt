@@ -5,13 +5,13 @@
 // and what to do when importing types
 declare namespace App {
 	interface Locals {
-		jwt: import('$lib').SvelteJWT;
+		jwt: import('$lib').SvelteJWT<JwtPayload>;
+	}
+
+	interface JwtPayload {
+		login: string;
+		role: 'user' | 'guest' | 'admin';
 	}
 	// interface PageData {}
 	// interface Platform {}
-
-	interface JWTPayload {
-		id: string;
-		secret: string;
-	}
 }

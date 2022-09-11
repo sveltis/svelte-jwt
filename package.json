@@ -1,12 +1,16 @@
 {
 	"name": "@sveltis/jwt",
-	"version": "0.0.1",
+	"version": "0.0.7",
 	"author": {
 		"email": "zheleznov@outlook.de",
 		"name": "Sergei Zheleznov"
 	},
+	"license": "MIT",
+	"bugs": "https://github.com/sveltis/svelte-jwt/issues",
+	"repository": "github:sveltis/svelte-jwt",
 	"scripts": {
 		"dev": "vite dev",
+		"test": "vitest",
 		"build": "svelte-kit sync && svelte-package",
 		"check": "svelte-kit sync && svelte-check --tsconfig ./tsconfig.json",
 		"check:watch": "svelte-kit sync && svelte-check --tsconfig ./tsconfig.json --watch",
@@ -17,8 +21,9 @@
 		"jose": "^4.9.2"
 	},
 	"devDependencies": {
+		"vitest": "^0.23.1",
 		"@sveltejs/adapter-auto": "next",
-		"@sveltejs/kit": "next",
+		"@sveltejs/kit": "1.0.0-next.480",
 		"@sveltejs/package": "next",
 		"@typescript-eslint/eslint-plugin": "^5.27.0",
 		"@typescript-eslint/parser": "^5.27.0",
