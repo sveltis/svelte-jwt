@@ -1,29 +1,28 @@
 <script lang="ts">
 	import { writable } from 'svelte/store';
 
-	const token = writable('');
 	const payload = writable();
+	const login = writable('');
 
 	const onSendClick = async (): Promise<void> => {
-		const response = await fetch('/api/login', { method: 'POST' });
-		const data = await response.json();
-		$token = data?.token;
+		await fetch('/api/login', {
+			method: 'POST',
+			body: JSON.stringify({
+				login: $login
+			})
+		});
 	};
 
 	const onReadClick = async (): Promise<void> => {
-		const response = await fetch('/api/me', {
-			method: 'GET',
-			headers: {
-				Authorization: `Bearer ${$token}`
-			}
-		});
+		const response = await fetch('/api/me');
 		$payload = await response.json();
 	};
 </script>
 
 <div class="form">
-	<span>JWT Token</span>
-	<textarea>{$token}</textarea>
+	<span>Loing</span>
+	<input bind:value={$login} />
+	<br />
 	<span>Payload</span>
 	<textarea>{JSON.stringify($payload)}</textarea>
 	<button on:click={onSendClick}>send</button>

@@ -1,12 +1,11 @@
-import type { Handle } from '@sveltejs/kit';
+import type { Cookies, Handle } from '@sveltejs/kit';
 import * as jose from 'jose';
 
-export type JWTGenerate = <T>(payload: T) => Promise<string>;
+export type JWTGenerate<T> = (payload: T, cookies: Cookies) => Promise<void>;
 
 export interface ISvelteJWTHelper<T> {
-	parse(jwt: string): Promise<T>;
-	generate: JWTGenerate;
-	attachBearer(jwt: string): void;
+	parse(cookies: Cookies): Promise<T>;
+	generate: JWTGenerate<T>;
 }
 export type SvelteKey = jose.KeyLike;
 
@@ -16,6 +15,7 @@ type SvelteHelperProps<T> = {
 	expirationTime?: string;
 	key: SvelteKey;
 	payloadDefault: T;
+	cookieName?: string;
 };
 
 export class SvelteJWTHelper<T> implements ISvelteJWTHelper<T> {
@@ -23,35 +23,36 @@ export class SvelteJWTHelper<T> implements ISvelteJWTHelper<T> {
 	private _audience: string;
 	private _key: SvelteKey;
 	private _payloadDefault: T;
-	private _bearer: string | undefined;
 	private _expirationTime: string;
+	private _cookieName = 'session';
 
 	public constructor({
 		issuer,
 		audience,
 		key,
 		payloadDefault,
-		expirationTime
+		expirationTime,
+		cookieName
 	}: SvelteHelperProps<T>) {
 		this._issuer = issuer;
 		this._audience = audience;
 		this._key = key;
 		this._payloadDefault = payloadDefault;
 		this._expirationTime = expirationTime || '2h';
+		if (cookieName) {
+			this._cookieName = cookieName;
+		}
 	}
 
 	public static createKey = async (): Promise<SvelteKey> => {
 		return (await jose.generateSecret('HS256')) as SvelteKey;
 	};
 
-	public attachBearer = (jwt: string): void => {
-		this._bearer = jwt;
-	};
-
-	public parse = async (): Promise<T> => {
+	public parse = async (cookies: Cookies): Promise<T> => {
+		const jwt = cookies.get(this._cookieName);
 		try {
-			if (!this._bearer) return this._payloadDefault;
-			const { payload } = await jose.jwtDecrypt(this._bearer, this._key, {
+			if (!jwt) return this._payloadDefault;
+			const { payload } = await jose.jwtDecrypt(jwt, this._key, {
 				issuer: this._issuer,
 				audience: this._audience
 			});
@@ -64,11 +65,16 @@ export class SvelteJWTHelper<T> implements ISvelteJWTHelper<T> {
 
 			return result;
 		} catch (error) {
-			throw new Error('Parsing JWT error');
+			if (jwt) {
+				cookies.delete(this._cookieName);
+				return this._payloadDefault;
+			} else {
+				throw new Error('Parsing JWT error');
+			}
 		}
 	};
 
-	public generate = async <T>(payload: T): Promise<string> => {
+	public generate = async (payload: T, cookies: Cookies): Promise<void> => {
 		try {
 			const jwt = await new jose.EncryptJWT({ ...payload } as jose.JWTPayload)
 				.setProtectedHeader({ alg: 'dir', enc: 'A256GCM' })
@@ -77,7 +83,7 @@ export class SvelteJWTHelper<T> implements ISvelteJWTHelper<T> {
 				.setAudience(this._audience)
 				.setExpirationTime(this._expirationTime)
 				.encrypt(this._key);
-			return jwt;
+			cookies.set(this._cookieName, jwt, { httpOnly: true, path: '/' });
 		} catch (error) {
 			throw new Error('JWT can not be created');
 		}
@@ -88,7 +94,7 @@ const key = await SvelteJWTHelper.createKey();
 
 export type SvelteJWT<T> = {
 	payload: T;
-	generate: JWTGenerate;
+	generate: JWTGenerate<T>;
 };
 
 type SvelteJWTConfig<T> = {
@@ -100,21 +106,16 @@ type SvelteJWTConfig<T> = {
 export const handleJWT = <T>(config: SvelteJWTConfig<T>): Handle => {
 	const { issuer, audience, payloadDefault } = config;
 
-	const { generate, parse, attachBearer } = new SvelteJWTHelper<T>({
+	const { generate, parse } = new SvelteJWTHelper<T>({
 		issuer,
 		audience,
 		key,
 		payloadDefault
 	});
-
 	return async ({ event, resolve }) => {
-		const auth = event.request.headers.get('Authorization');
-		if (auth && auth.includes('Bearer')) {
-			const [, jwt] = auth.split(' ');
-			attachBearer(jwt);
-		}
-		const payload = (await parse()) as unknown as typeof event.locals.jwt.payload;
-		event.locals.jwt = { generate, payload };
+		const payload = (await parse(event.cookies)) as unknown as typeof event.locals.jwt.payload;
+		const customGenerate = generate as JWTGenerate<typeof event.locals.jwt.payload>;
+		event.locals.jwt = { generate: customGenerate, payload };
 		return resolve(event);
 	};
 };

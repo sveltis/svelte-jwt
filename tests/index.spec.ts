@@ -1,3 +1,4 @@
+import type { Cookies } from '@sveltejs/kit';
 import { describe, expect, it } from 'vitest';
 import { SvelteJWTHelper } from '../src/lib/';
 
@@ -23,8 +24,8 @@ describe('SvelteJWTHelper', () => {
 			key,
 			payloadDefault: { id: 'unknown' }
 		});
-		const token = await instance.generate({ id: 123 });
-		expect(typeof token).toBe('string');
+		await instance.generate({ id: 123 }, {} as Cookies);
+		expect(true).toBe(true);
 	});
 
 	it('should return default payload if token is not defined', async () => {
