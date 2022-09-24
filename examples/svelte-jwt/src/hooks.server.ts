@@ -1,4 +1,4 @@
-import { handleJWT } from '$lib';
+import { handleJWT } from '@sveltis/jwt';
 import { sequence } from '@sveltejs/kit/hooks';
 
 export const handle = sequence(

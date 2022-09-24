@@ -1,6 +1,6 @@
 import type { RequestHandler } from '@sveltejs/kit';
 
-export const POST: RequestHandler = async ({ locals, cookies, params, request }) => {
+export const POST: RequestHandler = async ({ locals, cookies, request }) => {
 	const { jwt } = locals;
 	const { login } = await request.json();
 	if (!login) {

@@ -113,9 +113,10 @@ export const handleJWT = <T>(config: SvelteJWTConfig<T>): Handle => {
 		payloadDefault
 	});
 	return async ({ event, resolve }) => {
-		const payload = (await parse(event.cookies)) as unknown as typeof event.locals.jwt.payload;
-		const customGenerate = generate as JWTGenerate<typeof event.locals.jwt.payload>;
-		event.locals.jwt = { generate: customGenerate, payload };
+		const payload = await parse(event.cookies);
+		const customGenerate = generate as JWTGenerate<typeof payloadDefault>;
+
+		// event.locals.jwt = { generate: customGenerate, payload };
 		return resolve(event);
 	};
 };
